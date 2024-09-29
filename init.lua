@@ -948,7 +948,7 @@ vim.api.nvim_set_keymap('n', '<leader>nf', ':e .<CR>', { noremap = true, silent 
 
 -- Custom terminal in the editor configurations.
 --------------------
-local terminal_height_percentage = 0.3
+local terminal_height_percentage = 0.4
 -- This will make it 30% of the screen height.
 local terminal_buf = nil
 
@@ -1014,7 +1014,6 @@ vim.api.nvim_set_keymap('t', '<C-f>', '<C-\\><C-n>:lua toggle_terminal_full_scre
 -- vim.api.nvim_set_keymap('t', '<Esc>', '<C-\\><C-n>', { noremap = true, silent = true })
 
 -- Ensure terminal settings are applied
-
 vim.cmd [[
   augroup TerminalSettings
     autocmd!
