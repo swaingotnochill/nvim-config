@@ -145,7 +145,7 @@ vim.opt.splitbelow = true
 -- Sets how neovim will display certain whitespace characters in the editor.
 --  See `:help 'list'`
 --  and `:help 'listchars'`
-vim.opt.list = true
+vim.opt.list = false
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 
 -- Preview substitutions live, as you type!
@@ -173,7 +173,7 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 --
 -- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
 -- or just use <C-\><C-n> to exit terminal mode
-vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+vim.keymap.set('t', '<C-x>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
@@ -346,13 +346,25 @@ require('lazy').setup({
       require('telescope').setup {
         -- You can put your default mappings / updates / etc. in here
         --  All the info you're looking for is in `:help telescope.setup()`
-        --
+        -- # swaingotnochill: I don't see any output with these changes. I am dumb.
         -- defaults = {
         --   mappings = {
         --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
         --   },
+        --   file_ignore_patterns = {},
+        --   hidden = true,
         -- },
-        -- pickers = {}
+        -- pickers = {
+        --   find_files = {
+        --     hidden = true,
+        --     find_command = { 'rg', '--files', '-hidden', '--glob', '!**/.git/' },
+        --   },
+        --   live_grep = {
+        --     additional_args = function(opts)
+        --       return { '-hidden', '--glob', '!**/.git/*' }
+        --     end,
+        --   },
+        -- },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -737,9 +749,9 @@ require('lazy').setup({
 
           -- If you prefer more traditional completion keymaps,
           -- you can uncomment the following lines
-          --['<CR>'] = cmp.mapping.confirm { select = true },
-          --['<Tab>'] = cmp.mapping.select_next_item(),
-          --['<S-Tab>'] = cmp.mapping.select_prev_item(),
+          ['<CR>'] = cmp.mapping.confirm { select = true },
+          ['<Tab>'] = cmp.mapping.select_next_item(),
+          ['<S-Tab>'] = cmp.mapping.select_prev_item(),
 
           -- Manually trigger a completion from nvim-cmp.
           --  Generally you don't need this, because nvim-cmp will display
@@ -793,7 +805,8 @@ require('lazy').setup({
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      -- vim.cmd.colorscheme 'tokyonight-night'
+      vim.cmd.colorscheme 'habamax'
 
       -- You can configure highlights by doing something like:
       vim.cmd.hi 'Comment gui=none'
@@ -880,12 +893,12 @@ require('lazy').setup({
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
@@ -914,6 +927,118 @@ require('lazy').setup({
     },
   },
 })
+
+-- Function to toggle color column
+_G.toggle_color_column = function()
+  if vim.wo.colorcolumn == '' then
+    vim.wo.colorcolumn = '80'
+  else
+    vim.wo.colorcolumn = ''
+  end
+end
+
+-- Highlight
+vim.cmd [[highlight ColorColumn guibg=#303030]]
+
+-- key map
+vim.api.nvim_set_keymap('n', '<leader>tc', ':lua toggle_color_column()<CR>', { noremap = true, silent = true })
+
+-- Custom key mappings
+vim.api.nvim_set_keymap('n', '<leader>nf', ':e .<CR>', { noremap = true, silent = true })
+
+-- Custom terminal in the editor configurations.
+--------------------
+local terminal_height_percentage = 0.3
+-- This will make it 30% of the screen height.
+local terminal_buf = nil
+
+function _G.toggle_terminal()
+  local term_win = nil
+
+  if terminal_buf and vim.api.nvim_buf_is_valid(terminal_buf) then
+    for _, win in pairs(vim.api.nvim_list_wins()) do
+      if vim.api.nvim_win_get_buf(win) == terminal_buf then
+        term_win = win
+        break
+      end
+    end
+  end
+
+  if term_win then
+    vim.api.nvim_win_close(term_win, true)
+  else
+    local height = math.floor(vim.o.lines * terminal_height_percentage)
+    if not terminal_buf or not vim.api.nvim_buf_is_valid(terminal_buf) then
+      vim.cmd('botright' .. height .. 'split term://zsh')
+      terminal_buf = vim.api.nvim_get_current_buf()
+
+      vim.api.nvim_buf_set_option(terminal_buf, 'buflisted', false)
+      vim.wo.number = false
+      vim.wo.relativenumber = false
+      vim.wo.signcolumn = 'no'
+    else
+      vim.cmd('botright ' .. height .. 'split')
+      vim.api.nvim_win_set_buf(0, terminal_buf)
+    end
+    vim.cmd 'startinsert'
+  end
+  --
+  -- for _, win in pairs(vim.fn.getwininfo()) do
+  --   if win.terminal == 1 then
+  --     vim.cmd('bdelete! ' .. win.bufnr)
+  --     return
+  --   end
+  -- end
+  -- local height = math.floor(vim.o.lines * terminal_height_percentage)
+  -- vim.cmd('botright' .. height .. 'split term://zsh')
+  -- vim.cmd 'startinsert'
+end
+
+vim.api.nvim_set_keymap('n', '<leader>tt', ':lua toggle_terminal()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>tt', '<C-\\><C-n>:lua toggle_terminal()<CR>', { noremap = true, silent = true })
+
+function _G.toggle_terminal_full_screen()
+  local current_win = vim.api.nvim_get_current_win()
+  local current_win_config = vim.api.nvim_win_get_config(current_win)
+
+  if current_win_config.relative == '' then
+    vim.cmd 'resize | vertical resize'
+  else
+    local height = math.floor(vim.o.lines * terminal_height_percentage)
+    vim.cmd('resize ' .. height)
+  end
+end
+
+vim.api.nvim_set_keymap('t', '<C-f>', ':lua toggle_terminal_full_screen()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('t', '<C-f>', '<C-\\><C-n>:lua toggle_terminal_full_screen()<CR>', { noremap = true, silent = true })
+-- vim.api.nvim_set_keymap('t', '<Esc>', '<C-\\><C-n>', { noremap = true, silent = true })
+
+-- Ensure terminal settings are applied
+
+vim.cmd [[
+  augroup TerminalSettings
+    autocmd!
+    autocmd TermOpen,BufEnter term://* setlocal nonumber norelativenumber signcolumn=no
+    autocmd TermOpen,BufEnter term://* startinsert
+  augroup END
+]]
+
+-- General text wrapping(not formatting)
+-- Its not working. WHY???? :(
+vim.opt.textwidth = 80
+
+vim.wo.linebreak = true
+vim.wo.wrap = true
+
+-- tabs
+vim.api.nvim_set_keymap('n', '<leader>1', '1gt', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>2', '2gt', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>3', '3gt', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>4', '4gt', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>5', '5gt', { noremap = true, silent = true })
+
+vim.api.nvim_set_keymap('n', '<leader>tn', ':tabnext<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>tp', ':tabprevious<CR>', { noremap = true, silent = true })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
