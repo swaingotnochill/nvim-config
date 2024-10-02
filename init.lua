@@ -905,7 +905,7 @@ require('lazy').setup({
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   --    For additional information, see `:help lazy.nvim-lazy.nvim-structuring-your-plugins`
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
@@ -1011,7 +1011,7 @@ end
 
 vim.api.nvim_set_keymap('t', '<C-f>', ':lua toggle_terminal_full_screen()<CR>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('t', '<C-f>', '<C-\\><C-n>:lua toggle_terminal_full_screen()<CR>', { noremap = true, silent = true })
--- vim.api.nvim_set_keymap('t', '<Esc>', '<C-\\><C-n>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('t', '<Esc>', '<C-\\><C-n>', { noremap = true, silent = true })
 
 -- Ensure terminal settings are applied
 vim.cmd [[
@@ -1138,6 +1138,11 @@ end
 
 -- Add a keybinding to trigger the find and replace function
 vim.api.nvim_set_keymap('n', '<leader>wfr', ':lua telescope_find_replace_in_buffer()<CR>', { noremap = true, silent = true })
+
+-- My Tabs
+vim.o.tabstop = 4
+vim.o.shiftwidth = 4
+vim.o.expandtab = true
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
